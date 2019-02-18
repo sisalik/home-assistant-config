@@ -1,0 +1,51 @@
+############ GROUPS ############
+
+bedroom:
+  name: Bedroom
+  entities:
+    - script.sleep
+    - light.desk_lights
+    - light.bedroom_lights
+    - sensor.bedroom_temperature_bed
+    - sensor.bedroom_humidity_bed
+    - sensor.bedroom_temperature
+    - switch.heater
+
+living-room:
+  name: Living room
+  entities:
+    - script.work_mode
+    - light.mood_light
+
+corridor:
+  name: Corridor
+  entities:
+    - light.floor_lamp
+
+gates:
+  name: Gates
+  control: hidden
+  icon: mdi:gate
+  entities:
+    - script.open_main_gate
+    - script.open_side_gate
+
+printer:
+  name: 3D printer
+  control: hidden
+  entities:
+    - switch.printer_power
+    - automation.shut_down_when_done
+    - script.warm_up_printer
+    - script.start_print
+    - script.pause_print
+    - script.cancel_print
+    - sensor.printer_status_combined
+    - sensor.job_name
+    - sensor.printer_time_elapsed_formatted
+    - sensor.printer_time_remaining_formatted
+    - sensor.printer_bed_temp_combined
+    - sensor.printer_extruder_temp_combined
+    - weblink.octoprint
+    - weblink.webcam
+    - camera.printer

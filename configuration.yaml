@@ -1,0 +1,291 @@
+homeassistant:
+  # Name of the location where Home Assistant is running
+  name: Home
+  # Location required to calculate the time the sun rises and sets
+  latitude: !secret homeassistant_latitude
+  longitude: !secret homeassistant_longitude
+  # Impacts weather/sunrise data (altitude above sea level in meters)
+  elevation: 0
+  # metric for Metric, imperial for Imperial
+  unit_system: metric
+  # Pick yours from here: http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  time_zone: Europe/London
+  # Custom icons etc.
+  customize: !include customize.yaml
+
+# Show links to resources in log and frontend
+# introduction:
+
+# Enables the frontend
+frontend:
+
+# Enables configuration UI
+config:
+
+# Enables the map view
+map:
+
+zone: !include zones.yaml
+
+http:
+  # Uncomment this to add a password (recommended!)
+  api_password: !secret http_api_password
+  # Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+  base_url: !secret http_base_url
+  server_port: !secret http_server_port  # On Hassbian, need to run the following to allow binding to port 443: sudo setcap 'cap_net_bind_service=+ep' /usr/bin/python3.4
+  ssl_certificate: !secret http_ssl_certificate
+  ssl_key: !secret http_ssl_key
+
+# Checks for available updates
+# Note: This component will send some information about your system to
+# the developers to assist with development of Home Assistant.
+# For more information, please see:
+# https://home-assistant.io/blog/2016/10/25/explaining-the-updater/
+updater:
+  # Optional, allows Home Assistant developers to focus on popular components.
+  # include_used_components: true
+
+# Discover some devices automatically
+# discovery:
+
+# Allows you to issue voice commands from the frontend in enabled browsers
+conversation:
+
+# Enables support for tracking state changes over time
+history:
+
+# View all events in a logbook
+logbook:
+
+# Track the sun
+sun:
+
+# Weather prediction
+sensor:
+  - platform: yr
+    name: Weather
+    monitored_conditions:
+      - symbol
+      - temperature
+      - humidity
+      - pressure
+      - precipitation
+  - platform: onewire
+    names:
+      28-04147074faff: Bedroom
+  - platform: mqtt
+    name: Bedroom temperature (bed)
+    unit_of_measurement: °C
+    state_topic: "tele/bedroom-lights/SENSOR"
+    value_template: "{{ value_json.SI7021.Temperature }}"
+  - platform: mqtt
+    name: Bedroom humidity (bed)
+    unit_of_measurement: "%"
+    state_topic: "tele/bedroom-lights/SENSOR"
+    value_template: "{{ value_json.SI7021.Humidity }}"
+  - platform: octoprint
+    name: Printer
+    monitored_conditions:
+      - Current State
+      - Temperatures
+      - Job Percentage
+      - Time Elapsed
+      - Time Remaining
+  - platform: command_line
+    name: Job name
+    command: 'curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" http://octoprint.local/api/job'
+    value_template: "{% if value_json.job.file.name %}{{ value_json.job.file.name.split('.')[0] }}{% endif %}"
+  - platform: template
+    sensors:
+      printer_time_remaining_formatted:
+        friendly_name: Time remaining
+        value_template: >-
+          {% set time = states.sensor.octoprint_time_remaining.state | int %}
+          {% set hours = (time  / 3600) | int %}
+          {% set minutes = ((time % 3600) / 60) | int %}
+          {% set seconds = (time % 60) | int %}
+          {{ "{:02d}:{:02d}:{:02d}".format(hours|int, minutes|int, seconds|int) }}
+      printer_time_elapsed_formatted:
+        friendly_name: Time elapsed
+        value_template: >-
+          {% set time = states.sensor.octoprint_time_elapsed.state | int %}
+          {% set hours = (time  / 3600) | int %}
+          {% set minutes = ((time % 3600) / 60) | int %}
+          {% set seconds = (time % 60) | int %}
+          {{ "{:02d}:{:02d}:{:02d}".format(hours|int, minutes|int, seconds|int) }}
+      printer_bed_temp_combined:
+        friendly_name: Bed temperature
+        value_template: >-
+          {{states.sensor.octoprint_actual_bed_temp.state}}{{states.sensor.octoprint_actual_bed_temp.attributes.unit_of_measurement}}/{{states.sensor.octoprint_target_bed_temp.state}}{{states.sensor.octoprint_target_bed_temp.attributes.unit_of_measurement}}
+      printer_extruder_temp_combined:
+        friendly_name: Extruder temperature
+        value_template: >-
+          {{states.sensor.octoprint_actual_tool0_temp.state}}{{states.sensor.octoprint_actual_tool0_temp.attributes.unit_of_measurement}}/{{states.sensor.octoprint_target_tool0_temp.state}}{{states.sensor.octoprint_target_tool0_temp.attributes.unit_of_measurement}}
+      printer_status_combined:
+        friendly_name: Status
+        value_template: >-
+          {% if states.sensor.octoprint_current_state.state == "Printing" %}
+            {{states.sensor.octoprint_current_state.state}} ({{states.sensor.octoprint_job_percentage.state}}%)
+          {% else %}
+            {{states.sensor.octoprint_current_state.state}}
+            {% endif %}
+
+# Text to speech
+tts:
+  - platform: google
+
+ffmpeg:
+  ffmpeg_bin: /usr/bin/ffmpeg
+
+camera:
+  - name: Printer
+    platform: mjpeg
+    mjpeg_url: !secret camera_mjpeg_url
+    still_image_url : !secret camera_still_image_url
+    username: !secret camera_username
+    password: !secret camera_password
+    authentication: digest
+
+mqtt:
+  broker: localhost
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+
+light:
+  - platform: mqtt
+    name: "Bedroom lights"
+    state_topic: "stat/bedroom-lights/POWER"
+    command_topic: "cmnd/bedroom-lights/POWER"
+    availability_topic: "tele/bedroom-lights/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "Desk lights"
+    state_topic: "stat/desk-lights/POWER"
+    command_topic: "cmnd/desk-lights/POWER"
+    availability_topic: "tele/desk-lights/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "Mood light"
+    state_topic: "stat/mood-light/POWER"
+    command_topic: "cmnd/mood-light/POWER"
+    availability_topic: "tele/mood-light/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: mqtt
+    name: "Floor lamp"
+    state_topic: "stat/floor-lamp/POWER"
+    command_topic: "cmnd/floor-lamp/POWER"
+    availability_topic: "tele/floor-lamp/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+
+switch:
+  - platform: rpi_gpio
+    ports:
+      14: Main gate
+      15: Side gate
+  - platform: mqtt
+    name: "Heater"
+    state_topic: "stat/bedroom-heater/POWER"
+    command_topic: "cmnd/bedroom-heater/POWER"
+    availability_topic: "tele/bedroom-heater/LWT"
+    qos: 1
+    payload_on: "ON"
+    payload_off: "OFF"
+    payload_available: "Online"
+    payload_not_available: "Offline"
+    retain: false
+  - platform: command_line
+    switches:
+      printer_power:
+        command_on: >
+          curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" -X POST http://octoprint.local/api/system/commands/custom/printer%20on && sleep 3 && curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" -H "Content-Type: application/json" -X POST -d '{"command": "connect", "port": "/dev/ttyUSB0"}' http://octoprint.local/api/connection
+        command_off: >
+          curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" -X POST http://octoprint.local/api/system/commands/custom/printer%20off
+        command_state: >
+          curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" http://octoprint.local/api/printer?exclude=temperature,sd
+        value_template: '{{ value != "Printer is not operational" }}'
+        friendly_name: Power
+
+octoprint:
+  host: !secret octoprint_host
+  api_key: !secret octoprint_api_key
+  bed: true
+  number_of_tools: 1
+
+notify:
+  - platform: joaoapps_join
+    api_key: !secret joaoapps_join_api_key
+    device_names: !secret joaoapps_join_device_names
+
+joaoapps_join:
+  - name: android
+    device_id: group.android
+    api_key: !secret joaoapps_join_api_key
+
+google_assistant:
+  project_id: !secret google_assistant_project_id
+  api_key: !secret google_assistant_api_key
+  exposed_domains:
+    - switch
+    - light
+    - group
+    - script
+    - media_player
+
+media_player:
+  - platform: spotify
+    client_id: !secret spotify_client_id
+    client_secret: !secret spotify_client_secret
+
+media_extractor:
+
+# Enable python scripts
+python_script:
+
+shell_command:
+  set_printer_bed_temp: >
+    curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" -H "Content-Type: application/json" -X POST -d '{"command": "target", "target": 65}' http://octoprint.local/api/printer/bed
+  start_print: >
+    curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" -H "Content-Type: application/json" -X POST -d '{"command": "start"}' http://octoprint.local/api/job
+  pause_print: >
+    curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" -H "Content-Type: application/json" -X POST -d '{"command": "pause"}' http://octoprint.local/api/job
+  cancel_print: >
+    curl -k -H "X-Api-Key: 123456789987654321DEADBEEF" -H "Content-Type: application/json" -X POST -d '{"command": "cancel"}' http://octoprint.local/api/job
+
+weblink:
+  entities:
+    - name: Octoprint
+      url: !secret weblink_octoprint_url
+      icon: mdi:printer-3d
+    - name: Webcam
+      url: !secret weblink_webcam_url
+      icon: mdi:webcam
+
+panel_iframe:
+  terminal:
+    title: Terminal
+    icon: mdi:console
+    url: !secret panel_iframe_terminal_url
+
+script: !include scripts.yaml
+group: !include groups.yaml
+automation: !include automations.yaml

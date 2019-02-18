@@ -1,0 +1,87 @@
+- id: turn_on_light_when_dark
+  alias: Turn on the light when it gets dark
+  initial_state: 'off'
+  trigger:
+    platform: numeric_state
+    entity_id: sensor.street_view_light_level
+    above: 0
+    below: 100
+  action:
+    service: light.turn_on
+    entity_id: light.bedroom_lights
+- action:
+  - data:
+      entity_id: light.bedroom_lights
+    service: light.turn_on
+  alias: Morning light
+  condition: []
+  id: '1510099843071'
+  trigger: []
+- action:
+  - alias: Join notification
+    data:
+      data:
+        icon: https://goo.gl/xeetdy
+      message: Welcome home!
+      title: Home Assistant
+    service: notify.notify
+  alias: 'Presence: Welcome home'
+  condition: []
+  id: '1510432762465'
+  trigger:
+  - entity_id: binary_sensor.siim_home
+    from: 'off'
+    platform: state
+    to: 'on'
+- action:
+  - alias: Join notification
+    data:
+      data:
+        icon: https://goo.gl/xeetdy
+      message: Have a nice day!
+      title: Home Assistant
+    service: notify.notify
+  alias: 'Presence: Have a nice day'
+  condition: []
+  id: '1510433515593'
+  trigger:
+  - entity_id: binary_sensor.siim_home
+    from: 'on'
+    platform: state
+    to: 'off'
+- id: '1510437218738'
+  alias: 'Printer: Print started'
+  trigger:
+  - entity_id: sensor.octoprint_current_state
+    from: Operational
+    platform: state
+    to: Printing
+  condition: []
+  action:
+  - data:
+      command: ha:print_start
+    service: joaoapps_join.android_send_tasker
+- id: '1510437262730'
+  alias: 'Printer: Print done'
+  trigger:
+  - entity_id: sensor.octoprint_current_state
+    from: Printing
+    platform: state
+    to: Operational
+  condition: []
+  action:
+  - data:
+      command: ha:print_done
+    service: joaoapps_join.android_send_tasker
+- id: '1550448060496'
+  alias: Shut down when done
+  trigger:
+  - entity_id: sensor.octoprint_current_state
+    from: Printing
+    platform: state
+    to: Operational
+  condition: []
+  action:
+  - data:
+      entity_id: switch.printer_power
+    service: switch.turn_off

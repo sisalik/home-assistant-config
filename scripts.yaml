@@ -1,0 +1,52 @@
+open_main_gate:
+  sequence:
+  - entity_id: switch.main_gate
+    service: switch.turn_on
+  - delay: '1'
+  - entity_id: switch.main_gate
+    service: switch.turn_off
+  - delay: 00:00:38
+open_side_gate:
+  sequence:
+  - entity_id: switch.side_gate
+    service: switch.turn_on
+  - delay: '1'
+  - entity_id: switch.side_gate
+    service: switch.turn_off
+  - delay: 00:00:22
+warm_up_printer:
+  sequence:
+  - service: switch.turn_on
+    entity_id: switch.printer_power
+  - wait_template: '{{ states.sensor.octoprint_current_state.state == ''Operational''
+      }}'
+  - service: shell_command.set_printer_bed_temp
+start_print:
+  sequence:
+  - service: shell_command.start_print
+pause_print:
+  sequence:
+  - service: shell_command.pause_print
+cancel_print:
+  sequence:
+  - service: shell_command.cancel_print
+work_mode:
+  alias: Chill mode
+  sequence:
+  - data:
+      entity_id: light.mood_light
+    service: light.turn_on
+  - data:
+      entity_id: media_player.kitchen
+      media_content_id: https://www.youtube.com/watch?v=RDfjXj5EGqI
+      media_content_type: video/youtube
+    service: media_extractor.play_media
+sleep:
+  alias: Sleep
+  sequence:
+  - data: {}
+    service: light.turn_off
+  - alias: ''
+    data: {}
+    service: switch.turn_off
+  - service: media_player.media_stop
