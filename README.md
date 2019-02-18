@@ -11,3 +11,11 @@ Features:
 - Wanhao Duplicator i3 controlled via Octoprint installed on a separate Raspberry Pi 1 Model B+
 - Cheap (~£30) bullet-style wifi CCTV camera
 - Chromecast and Spotify API
+
+ Additional integrations via <a href="https://tasker.joaoapps.com">Tasker</a> on the phone:
+ - SMS-triggered vehicle gate opening for authorised contacts
+ - Home/away detection based on wifi and cell connections
+ - Automatically turn off lights when going to sleep
+ - Quick launch shortcuts in the notification bar using QuickTask
+ - 3D printer progress notifications
+ - Schedule and alarm clock based heating control
